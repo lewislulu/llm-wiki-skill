@@ -3,6 +3,7 @@ import type { AuditEntry } from "audit-shared";
 import { renderTree } from "./tree.js";
 import { installFeedbackUI } from "./feedback.js";
 import { renderGraph, type GraphData, type GraphNode } from "./graph.js";
+import { ParticleField } from "./particles.js";
 
 interface PageResponse {
   path: string;
@@ -115,16 +116,30 @@ async function main() {
   const graphOverlay = document.getElementById("graph-overlay")!;
   const openGraph = async () => {
     graphOverlay.classList.remove("hidden");
+    // Let layout settle so canvas/svg get their sizes.
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+
     const data = (await fetch("/api/graph").then((r) => r.json())) as GraphData;
     const svg = document.getElementById("graph-svg") as unknown as SVGSVGElement;
+    const canvas = document.getElementById("graph-particles") as HTMLCanvasElement;
+
     if (state.graphTeardown) state.graphTeardown();
-    state.graphTeardown = renderGraph(svg, data, {
+
+    const particles = new ParticleField(canvas, 95);
+    particles.start();
+
+    const teardownGraph = renderGraph(svg, data, {
       onNodeClick: (node: GraphNode) => {
-        graphOverlay.classList.add("hidden");
+        closeGraph();
         void loadPage(node.path);
         history.pushState({ page: node.path }, "", `/?page=${encodeURIComponent(node.path)}`);
       },
     });
+
+    state.graphTeardown = () => {
+      particles.stop();
+      teardownGraph();
+    };
   };
   const closeGraph = () => {
     graphOverlay.classList.add("hidden");

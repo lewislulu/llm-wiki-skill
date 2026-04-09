@@ -833,12 +833,15 @@ article h3:hover .header-anchor { opacity: 0.7; }
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(17, 17, 27, 0.72);
-  -webkit-backdrop-filter: blur(30px) saturate(140%);
-  backdrop-filter: blur(30px) saturate(140%);
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(203, 166, 247, 0.08) 0%, transparent 40%),
+    radial-gradient(ellipse at 80% 100%, rgba(148, 226, 213, 0.06) 0%, transparent 40%),
+    rgba(11, 11, 20, 0.82);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  backdrop-filter: blur(32px) saturate(160%);
   display: flex;
   flex-direction: column;
-  animation: fadeIn 220ms ease;
+  animation: fadeIn 300ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 @keyframes fadeIn {
   from { opacity: 0; }
@@ -851,6 +854,8 @@ article h3:hover .header-anchor { opacity: 0.7; }
   justify-content: space-between;
   padding: 20px 32px;
   border-bottom: 1px solid var(--border-soft);
+  position: relative;
+  z-index: 4;
 }
 #graph-overlay .graph-header h2 {
   margin: 0;
@@ -869,7 +874,12 @@ article h3:hover .header-anchor { opacity: 0.7; }
   height: 10px;
   border-radius: 50%;
   background: var(--ctp-mauve);
-  box-shadow: 0 0 16px var(--ctp-mauve);
+  box-shadow: 0 0 16px var(--ctp-mauve), 0 0 30px rgba(203, 166, 247, 0.4);
+  animation: brandPulse 3s ease-in-out infinite;
+}
+@keyframes brandPulse {
+  0%, 100% { box-shadow: 0 0 16px var(--ctp-mauve), 0 0 30px rgba(203, 166, 247, 0.4); }
+  50%      { box-shadow: 0 0 24px var(--ctp-mauve), 0 0 50px rgba(203, 166, 247, 0.6); }
 }
 #graph-overlay .graph-controls {
   display: flex;
@@ -880,55 +890,114 @@ article h3:hover .header-anchor { opacity: 0.7; }
   flex: 1 1 auto;
   position: relative;
   overflow: hidden;
+  isolation: isolate;
 }
-#graph-svg {
+/* subtle inner vignette above the particles */
+#graph-svg-wrap::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.55) 100%);
+  z-index: 3;
+}
+
+/* layered canvas + svg */
+#graph-particles {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+#graph-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
   cursor: grab;
 }
 #graph-svg:active { cursor: grabbing; }
 
+/* Links — curved paths */
 #graph-svg .link {
-  stroke: rgba(180, 190, 254, 0.22);
-  stroke-width: 1px;
-  transition: stroke 180ms ease, stroke-width 180ms ease, stroke-opacity 180ms ease;
+  stroke: rgba(180, 190, 254, 0.18);
+  stroke-width: 1.1;
+  fill: none;
+  transition: stroke 220ms ease, stroke-width 220ms ease, stroke-opacity 220ms ease;
 }
-#graph-svg .link.dim  { stroke-opacity: 0.1; }
+#graph-svg .link.dim { stroke-opacity: 0.05; }
 #graph-svg .link.highlight {
   stroke: var(--ctp-lavender);
-  stroke-width: 2px;
-  stroke-opacity: 0.9;
+  stroke-width: 2.2;
+  stroke-opacity: 0.92;
+  stroke-dasharray: 8 6;
+  animation: dashflow 22s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(180, 190, 254, 0.55));
+}
+@keyframes dashflow {
+  to { stroke-dashoffset: -1000; }
 }
 
+/* Node halo — blurred circle behind the node, colored by group */
+#graph-svg .node-halo {
+  opacity: 0.4;
+  pointer-events: none;
+}
+#graph-svg .node.group-concepts  .node-halo { fill: var(--grp-concepts); }
+#graph-svg .node.group-entities  .node-halo { fill: var(--grp-entities); }
+#graph-svg .node.group-summaries .node-halo { fill: var(--grp-summaries); }
+#graph-svg .node.group-other     .node-halo { fill: var(--grp-other); }
+
+/* Node main circle */
+#graph-svg .node .node-main {
+  stroke: rgba(17, 17, 27, 0.9);
+  stroke-width: 1.4;
+  transition: stroke-width 220ms ease;
+}
+#graph-svg .node.group-concepts  .node-main { fill: var(--grp-concepts); }
+#graph-svg .node.group-entities  .node-main { fill: var(--grp-entities); }
+#graph-svg .node.group-summaries .node-main { fill: var(--grp-summaries); }
+#graph-svg .node.group-other     .node-main { fill: var(--grp-other); }
+
+/* Node group element (d3 sets transform) */
 #graph-svg .node {
   cursor: pointer;
-  transition: filter 180ms ease;
+  transition: opacity 240ms ease;
 }
-#graph-svg .node circle {
-  stroke: rgba(17, 17, 27, 0.8);
-  stroke-width: 1.5px;
-  transition: r 180ms ease, stroke-width 180ms ease;
-}
-#graph-svg .node.group-concepts  circle { fill: var(--grp-concepts); }
-#graph-svg .node.group-entities  circle { fill: var(--grp-entities); }
-#graph-svg .node.group-summaries circle { fill: var(--grp-summaries); }
-#graph-svg .node.group-other     circle { fill: var(--grp-other); }
-#graph-svg .node.dim { opacity: 0.25; }
-#graph-svg .node.highlight circle {
+#graph-svg .node.dim { opacity: 0.18; }
+#graph-svg .node.highlight .node-main {
   stroke: var(--fg-strong);
-  stroke-width: 2.5px;
-  filter: drop-shadow(0 0 10px currentColor);
+  stroke-width: 2.6;
 }
+#graph-svg .node.highlight .node-halo { opacity: 0.75; }
+
+/* Labels — appear on hover or when big */
 #graph-svg .node text {
   fill: var(--fg);
   font: 500 11px var(--font-sans);
   pointer-events: none;
-  opacity: 0.0;
-  transition: opacity 180ms ease;
-  text-shadow: 0 1px 4px rgba(17, 17, 27, 0.9);
+  opacity: 0;
+  transition: opacity 220ms ease;
+  text-shadow:
+    0 1px 4px rgba(17, 17, 27, 0.95),
+    0 0 10px rgba(17, 17, 27, 0.8);
 }
 #graph-svg .node.highlight text,
 #graph-svg .node.big text { opacity: 1; }
+
+/* Staggered entry animation — driven by inline animation-delay */
+#graph-svg .node-inner {
+  animation: nodeIn 720ms cubic-bezier(0.22, 0.61, 0.36, 1) backwards;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+@keyframes nodeIn {
+  from { opacity: 0; transform: scale(0.35); }
+  to   { opacity: 1; transform: scale(1); }
+}
 
 .graph-legend {
   position: absolute;
@@ -944,6 +1013,7 @@ article h3:hover .header-anchor { opacity: 0.7; }
   -webkit-backdrop-filter: blur(20px);
   backdrop-filter: blur(20px);
   box-shadow: var(--glass-shadow);
+  z-index: 4;
 }
 .graph-legend .legend-row {
   display: flex;
@@ -969,6 +1039,7 @@ article h3:hover .header-anchor { opacity: 0.7; }
   font-size: 11px;
   color: var(--fg-soft);
   font-family: var(--font-mono);
+  z-index: 4;
 }
 .graph-hint kbd {
   display: inline-block;
