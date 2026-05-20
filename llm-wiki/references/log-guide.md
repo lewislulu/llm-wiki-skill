@@ -50,6 +50,10 @@ Rules:
 | `split`    | A single page split into a folder | `## [10:00] split \| Claude Code → claude-code/` |
 | `scaffold` | Initial wiki setup | `## [08:00] scaffold \| Initialized Topic knowledge base` |
 
+## Design goal: grep-ability
+
+The prefix convention — `## [HH:MM] <op> | <one-line>` — is intentional: it makes the entire operation history **grep-able** with simple Unix tools. The LLM doesn't need a database to answer "what happened last week".
+
 ## Quick grep
 
 ```bash

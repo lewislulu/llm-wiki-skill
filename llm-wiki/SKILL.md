@@ -21,6 +21,8 @@ description: >-
 > **Experimental skill — iterating.**
 > Authored by Lewis Liu (lylewis@outlook.com) · Inspired by [Karpathy's llm-wiki Gist](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)
 
+> **⚠️ Adaptation note** — The conventions below (directory layout, word counts, audit format) are a **starting point**, not a rigid spec. Karpathy's original Gist deliberately describes just the _idea_, not an implementation. Evolve these conventions with your LLM as your wiki grows. What works for a 20-page personal wiki won't fit a 500-page team knowledge base. Treat this skill file as a co-evolution partner, not a boss.
+
 ## Core idea
 
 Instead of RAG (re-retrieving raw docs on every query), the LLM **compiles** raw sources into a persistent, cross-linked wiki. Every ingest, query, lint, and audit pass makes the wiki richer. Knowledge compounds — and the human stays in the loop via a structured feedback channel instead of ad-hoc corrections that get lost.
@@ -29,6 +31,8 @@ Instead of RAG (re-retrieving raw docs on every query), the LLM **compiles** raw
 - **LLM** owns: all writing, cross-referencing, filing, bookkeeping, and acting on your feedback.
 
 The wiki is a living artifact with **five operations** — `compile`, `ingest`, `query`, `lint`, `audit`. Every session starts by reading `CLAUDE.md` and `wiki/index.md`.
+
+> This idea traces back to Vannevar Bush's **Memex** (1945) — a personal, curated knowledge store with associative trails between documents. Private, actively curated, with the connections between documents as valuable as the documents themselves. The part Bush couldn't solve was who does the maintenance. The LLM finally handles that.
 
 ## Directory layout
 
@@ -63,7 +67,7 @@ Four rules govern everything below. If a future instruction contradicts one, fla
 
 ### 1. Divide and conquer
 
-A single concept page should **never** try to cover a complex topic end-to-end. Target: **400–1200 words per page**. When a topic would blow past that:
+A single concept page should **never** try to cover a complex topic end-to-end. General guideline: **400–1200 words per page**; consider splitting above that threshold. When a topic would blow past that range:
 
 - Create a subfolder: `wiki/concepts/<topic>/`
 - Put a short index page at `wiki/concepts/<topic>/index.md` — definition, list of sub-pages, one-line summaries
@@ -84,6 +88,8 @@ wiki/tech/claude-code/
 ```
 
 One fat file covering all seven aspects would be unreadable and unlinkable. Seven focused files + an index page give you navigation, selective reading, clean backlinks, and small audit targets.
+
+> **When to keep a page intact** — if sections are so tightly coupled that splitting damages readability, keeping a longer page (~2000 words) is fine. The split guideline is a heuristic, not a police officer. You and your LLM decide together.
 
 ### 2. Mermaid for diagrams, KaTeX for formulas
 
@@ -123,7 +129,13 @@ This keeps the wiki repo git-friendly and portable.
 
 The wiki is AI-written; it will be wrong sometimes. The raw sources are human-written; they will contradict each other. The `audit/` directory is how humans correct both without losing the corrections in chat history.
 
-- Humans file feedback via the Obsidian plugin or the web viewer. Each feedback is one file in `audit/` with YAML frontmatter (anchor, target, severity) and a markdown body.
+**Two modes:**
+
+- **Simple mode** — just drop a markdown file into `audit/` with a comment body and the target file referenced in the body or as `target:` in frontmatter. No anchor fields required. Works for small wikis or quick notes. The AI will locate the issue from context.
+- **Full mode** — full YAML frontmatter with anchor window (`anchor_before`, `anchor_text`, `anchor_after`). Required for large wikis where text drift makes line numbers unreliable.
+
+Rules:
+- Humans file feedback via the Obsidian plugin, the web viewer, or **directly by telling the LLM** (the LLM writes the audit file itself).
 - The AI **must** periodically run the `audit` op — never silently ignore `audit/*.md` files.
 - When feedback is applied, the file moves to `audit/resolved/` with a `# Resolution` section appended and a log entry recorded in `log/YYYYMMDD.md`.
 
@@ -232,13 +244,16 @@ See `references/audit-guide.md` for the full audit file format.
 
 | Tool | Purpose |
 |------|---------|
-| [Obsidian](https://obsidian.md) | IDE for browsing the wiki; graph view shows connections |
+| [Obsidian](https://obsidian.md) | IDE for browsing the wiki. **Graph view** (`Ctrl+G`) shows wiki shape at a glance — dense hubs vs orphan pages |
 | **`plugins/obsidian-audit/`** | Obsidian plugin — select text → add feedback → writes to `audit/` |
 | **`web/`** | Local Node.js server — preview the wiki with mermaid/math rendered; select → feedback → `audit/` |
 | `scripts/scaffold.py` | Bootstrap a new wiki directory tree |
 | `scripts/lint_wiki.py` | Seven-pass health check |
 | `scripts/audit_review.py` | Group open/resolved audits by target file |
-| [qmd](https://github.com/tobi/qmd) | Optional local semantic search (useful at >100 pages) |
+| [Dataview](https://obsidian.md/plugins?id=dataview) (plugin) | Query page frontmatter for dynamic tables and lists |
+| [Marp](https://marp.app/) (plugin) | Generate slide decks from wiki content |
+| [qmd](https://github.com/tobi/qmd) | Optional local semantic search (BM25+vector, useful at >100 pages) |
+| **Git** | The wiki is a git repo — version history, branching, collaboration for free |
 
 The Obsidian plugin and the web viewer both write audit files in the **same format** with **the same anchor algorithm**, so feedback filed from either place can be resolved by either place.
 

@@ -6,7 +6,9 @@
 
 Without a schema, the LLM creates inconsistent page names, overlapping articles, and drifts from the wiki's intended scope. With a well-maintained schema, the LLM becomes a disciplined, consistent wiki maintainer.
 
-**Co-evolve it with the wiki** — update after every major compile, ingest batch, or structural change.
+**Co-evolve it with the wiki.** The schema isn't written once at setup and forgotten. It evolves as you explore — scope broadens, conventions improve, old questions get answered and new ones emerge. Update after every major compile, ingest batch, or structural change. If a file crashes against reality (e.g., a naming convention no longer fits), change the schema _and_ fix affected files. Karpathy's original Gist calls this out explicitly: "You and the LLM co-evolve [the schema] over time."
+
+Separate from the log: the schema tracks **structure** (what should exist); the log tracks **history** (what happened when).
 
 ## Full template
 

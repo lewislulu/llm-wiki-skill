@@ -19,10 +19,51 @@ Practical setup and usage notes for the LLM Wiki stack.
 
 ### Graph view
 
-Graph view (`Ctrl+G`) is the best way to see your wiki's shape:
+Graph view (`Ctrl+G`) is the best way to see your wiki's shape — and the single most powerful Obsidian feature for this workflow:
 - Dense hub = a well-connected concept page.
 - Isolated node = orphan page (needs inbound links or removal). `lint_wiki.py` flags these.
 - Cluster = a sub-topic worth a dedicated folder-split under `wiki/concepts/`.
+
+> Karpathy describes the relationship as: **Obsidian is the IDE; the LLM is the programmer; the wiki is the codebase.** You browse the graph in real time as the LLM edits.
+
+### Dataview
+
+[Dataview](https://obsidian.md/plugins?id=dataview) treats your wiki's YAML frontmatter as a queryable database. Once you have frontmatter with tags, dates, source counts, etc., Dataview can generate dynamic tables and lists without manual index updates.
+
+Example query — show all concept pages with >3 sources, sorted by recency:
+````markdown
+```dataview
+TABLE sources.length as "Sources", updated as "Last updated"
+FROM "wiki/concepts"
+WHERE type = "concept" AND sources.length > 3
+SORT updated DESC
+```
+````
+
+Dataview reduces index maintenance overhead significantly at scale.
+
+### Marp — slide decks from wiki content
+
+[Marp](https://marp.app/) converts markdown to slide decks. Install the Obsidian plugin, add Marp frontmatter, and export.
+
+```markdown
+---
+marp: true
+theme: default
+---
+
+# Comparison: RAG vs LLM Wiki
+
+## RAG
+- Re-retrieves every time
+- No knowledge accumulation
+
+## LLM Wiki
+- Compiled knowledge
+- Cross-references persist
+```
+
+Karpathy specifically mentions Marp as a useful output format in his original Gist.
 
 ## Audit plugin — `plugins/obsidian-audit/`
 
@@ -126,9 +167,10 @@ Embed in a wiki article: `![[my-analysis.png]]`.
 ## Git workflow
 
 The wiki is a git repo. Benefits:
-- Version history for every article.
-- Branching for experimental research directions.
-- Audit files are tracked, so "who suggested this and when" is first-class.
+- Version history for every article — rollback mistakes, see how understanding evolved.
+- Branching for experimental research directions without polluting main.
+- Audit files are tracked, so "who suggested what and when" is first-class.
+- Collaborate by sharing a repo.
 
 ```bash
 git add .
@@ -137,6 +179,8 @@ git push
 ```
 
 Keep large files (PDFs >10 MB, raw images at full resolution, video, model weights) in `.gitignore`. Use the raw file policy: pointer files in `raw/refs/`, not copies.
+
+Karpathy specifically mentions: **"The wiki is just a git repo of markdown files. You get version history, branching, and collaboration for free."**
 
 ## Interactive HTML outputs
 

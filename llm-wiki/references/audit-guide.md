@@ -1,6 +1,15 @@
 # Audit Guide — human feedback on wiki content
 
-The `audit/` directory is the human feedback surface. One file per feedback, YAML frontmatter + markdown body. Feedback is produced by the Obsidian plugin or the web viewer and **consumed by the AI during the `audit` operation**.
+The `audit/` directory is the human feedback surface. One file per feedback, YAML frontmatter + markdown body. Feedback is produced by the Obsidian plugin, the web viewer, or **directly by the human telling the AI** (the AI writes the audit file).
+
+## Two modes
+
+The audit system supports two modes:
+
+- **Simple mode** — Just a markdown file with a comment. No frontmatter required beyond an optional `target:` field. Works for small wikis where the LLM and human have enough context to locate the issue without line-level anchoring.
+- **Full mode** — Full YAML frontmatter with anchor window (`anchor_before`, `anchor_text`, `anchor_after`). Required for large wikis where text drift makes line numbers unreliable.
+
+Pick the mode that fits your wiki size and feedback volume. You can mix both.
 
 ## Why it exists
 
@@ -51,19 +60,32 @@ status: open
 
 ### Frontmatter fields
 
+**Full mode fields** (all required for full mode):
+
 | Field | Type | Required | Notes |
 |---|---|---|---|
 | `id` | string | yes | Unique id: `YYYYMMDD-HHMMSS-<4hex>`. Must match filename prefix. |
 | `target` | string | yes | Path relative to wiki root. Must be a file that exists (lint check). |
-| `target_lines` | `[int, int]` | yes | Best-effort 1-indexed inclusive line range at the time of writing. May drift. |
-| `anchor_before` | string | yes | Up to ~80 chars of text immediately before the selection. Verbatim, preserves newlines. |
-| `anchor_text` | string | yes | The exact selected text. Verbatim. |
-| `anchor_after` | string | yes | Up to ~80 chars of text immediately after the selection. Verbatim. |
+| `target_lines` | `[int, int]` | full | Best-effort 1-indexed inclusive line range at the time of writing. May drift. |
+| `anchor_before` | string | full | Up to ~80 chars of text immediately before the selection. Verbatim, preserves newlines. |
+| `anchor_text` | string | full | The exact selected text. Verbatim. |
+| `anchor_after` | string | full | Up to ~80 chars of text immediately after the selection. Verbatim. |
 | `severity` | enum | yes | One of `info`, `suggest`, `warn`, `error`. |
 | `author` | string | yes | Free text. The Obsidian plugin defaults to the OS username; the web viewer has a config. |
 | `source` | enum | yes | One of `obsidian-plugin`, `web-viewer`, `manual`. |
 | `created` | ISO 8601 | yes | Timestamp with timezone. |
 | `status` | enum | yes | `open` for files in `audit/`, `resolved` for files in `audit/resolved/`. |
+
+**Simple mode** — only `target` and `severity` are needed (though any subset works). The AI reads the comment body and uses conversational context + its own search to locate the issue. Example:
+
+```markdown
+---
+target: concepts/Market_Making.md
+severity: warn
+---
+
+The inventory risk formula seems wrong. The paper says it should be sqrt(variance * dt), not variance * dt.
+```
 
 ### Severity semantics
 
