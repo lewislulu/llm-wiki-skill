@@ -6,13 +6,15 @@ Guidelines for writing high-quality wiki articles. Read before compiling a new c
 
 | Page type | Target length | Notes |
 |-----------|--------------|-------|
-| Concept page | 400–1200 words | Dense, no padding. **Hard ceiling: 1200.** |
+| Concept page | 400–1200 words | Dense, no padding. **Soft ceiling: 1200.** |
 | Folder-split `index.md` | 150–400 words | Definition + map of sub-pages |
 | Sub-page under a folder-split | 400–1200 words | Covers one aspect |
 | Entity page | 200–500 words | Factual, link-heavy |
 | Summary page | 150–400 words | Takeaways, not a rewrite |
 
 Avoid padding. A 400-word article that's dense beats an 800-word article with filler.
+
+> **Override note:** 1200 words is a guideline, not a hard limit. If sections are tightly coupled and splitting would break narrative flow, keeping a longer page (~2000 words) is fine. The LLM should flag the overage to the user for a decision.
 
 ## Divide and conquer — when to split
 
